@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Citation Clerk Sim — Class Dashboard</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+<header>
+<div class="title">
+<h1>Citation Clerk Sim — Class Dashboard</h1>
+<p class="sub">Offline static dashboard. Drop exported JSON files to aggregate results.</p>
+</div>
+<div class="actions">
+<label class="btn">
+<input accept="application/json" id="fileInput" multiple="" type="file"/>
+        Add JSON files
+      </label>
+<select class="select" id="sortBy"><option selected="selected" value="score_desc">Sort: Chambers Score (high→low)</option><option value="accuracy_desc">Sort: User accuracy (high→low)</option><option value="lift_desc">Sort: Lift (high→low)</option><option value="alias_asc">Sort: Alias (A→Z)</option></select><button class="btn secondary" id="btnClear" type="button">Clear</button>
+<button class="btn secondary" id="btnExportCSV" type="button">Export CSV</button>
+<button class="btn" id="btnSnapshot" type="button">Download shareable snapshot (HTML)</button>
+</div>
+</header>
+<main>
+<section aria-label="Drop JSON files here" class="dropzone" id="dropZone">
+<div class="drop-inner">
+<div class="drop-big">Drop exported results JSON files here</div>
+<div class="drop-small">or use “Add JSON files”. Files stay local; nothing is uploaded.</div>
+</div>
+</section>
+<section class="grid">
+<div class="card">
+<h2>Class summary</h2>
+<div class="kpis">
+<div class="kpi"><div class="kpiLabel">Submissions</div><div class="kpiValue" id="kpiN">0</div></div>
+<div class="kpi"><div class="kpiLabel">Mean accuracy (user)</div><div class="kpiValue" id="kpiAcc">—</div></div>
+<div class="kpi"><div class="kpiLabel">Mean accuracy (assistant)</div><div class="kpiValue" id="kpiAsstAcc">—</div></div>
+<div class="kpi"><div class="kpiLabel">Assistant error rate</div><div class="kpiValue" id="kpiAsstErr">—</div></div>
+<div class="kpi"><div class="kpiLabel">Mean lift (user − assistant)</div><div class="kpiValue" id="kpiLift">—</div></div>
+<div class="kpi"><div class="kpiLabel">Mean avg time</div><div class="kpiValue" id="kpiRt">—</div></div>
+<div class="kpi"><div class="kpiLabel">Mean flag-only rate</div><div class="kpiValue" id="kpiFO">—</div></div>
+<div class="kpi"><div class="kpiLabel">Mean Chambers Score</div><div class="kpiValue" id="kpiScoreMean">—</div></div><div class="kpi"><div class="kpiLabel">Best Chambers Score</div><div class="kpiValue" id="kpiScoreBest">—</div></div><div class="kpi"><div class="kpiLabel">Mean Judge Time</div><div class="kpiValue" id="kpiJudgeMean">—</div></div></div>
+<div class="note">
+          Tip: Click a row below to view an individual’s detail panel.
+        </div><div class="topbox"><h3>Top performers</h3><ol class="toplist" id="topList"></ol></div>
+</div>
+<div class="card">
+<h2>Accuracy vs speed</h2>
+<canvas height="300" id="chartScatter" width="560"></canvas>
+<div class="legend">
+          Each point is a submission: x = avg time per cite (s), y = accuracy (%).
+        </div>
+</div>
+<div class="card">
+<h2>Phase averages</h2>
+<div class="phaseCharts">
+<div>
+<div class="smallTitle">Accuracy by phase (user vs assistant)</div>
+<canvas height="220" id="chartAccPhase" width="520"></canvas>
+</div>
+<div>
+<div class="smallTitle">Flag-only rate by phase</div>
+<canvas height="220" id="chartFOPHase" width="520"></canvas>
+</div>
+</div>
+</div>
+<div class="card wide">
+<h2>Submissions</h2>
+<div class="tableWrap">
+<table id="subTable">
+<thead>
+<tr>
+<th>Alias</th>
+<th>Session</th>
+<th>End</th>
+<th>Decisions</th>
+<th>Accuracy</th>
+<th>Assistant acc</th>
+<th>Lift</th>
+<th>Saved errors</th><th>Chambers Score</th><th>Judge Time</th><th>Decision time</th><th>Error penalties</th><th>High-conf penalties</th>
+<th>Avg time</th>
+<th>Flag-only</th>
+<th>Verify rate</th>
+<th>P1 acc</th>
+<th>P2 acc</th>
+<th>P3 acc</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+</div>
+</div>
+<div class="card wide" id="detailCard" style="display:none;">
+<div class="detailHeader">
+<h2 id="detailTitle">Details</h2>
+<button class="btn secondary" id="btnCloseDetail" type="button">Close</button>
+</div>
+<div class="detailGrid">
+<div class="detailKPIs">
+<div class="kpi"><div class="kpiLabel">Accuracy (user)</div><div class="kpiValue" id="dAcc">—</div></div>
+<div class="kpi"><div class="kpiLabel">Accuracy (assistant)</div><div class="kpiValue" id="dAsstAcc">—</div></div>
+<div class="kpi"><div class="kpiLabel">Lift (user − assistant)</div><div class="kpiValue" id="dLift">—</div></div>
+<div class="kpi"><div class="kpiLabel">Saved errors</div><div class="kpiValue" id="dSaved">—</div></div><div class="kpi"><div class="kpiLabel">Chambers Score</div><div class="kpiValue" id="dScore">—</div></div><div class="kpi"><div class="kpiLabel">Judge Time</div><div class="kpiValue" id="dJudgeTime">—</div></div><div class="kpi"><div class="kpiLabel">Decision time</div><div class="kpiValue" id="dDecTime">—</div></div><div class="kpi"><div class="kpiLabel">Error penalties</div><div class="kpiValue" id="dErrPen">—</div></div><div class="kpi"><div class="kpiLabel">High-conf penalties</div><div class="kpiValue" id="dHcPen">—</div></div>
+<div class="kpi"><div class="kpiLabel">Avg time</div><div class="kpiValue" id="dRt">—</div></div>
+<div class="kpi"><div class="kpiLabel">Flag-only</div><div class="kpiValue" id="dFO">—</div></div>
+<div class="kpi"><div class="kpiLabel">Verify rate</div><div class="kpiValue" id="dVR">—</div></div>
+<div class="kpi"><div class="kpiLabel">Override rate</div><div class="kpiValue" id="dOR">—</div></div>
+<div class="kpi"><div class="kpiLabel">High-conf misses</div><div class="kpiValue" id="dHCM">—</div></div>
+</div>
+<div class="detailCharts">
+<div class="smallTitle">Running accuracy (window=5)</div>
+<canvas height="220" id="chartRunAcc" width="900"></canvas>
+<div class="smallTitle" style="margin-top:12px;">Decision timeline (flag-only vs verified)</div>
+<canvas height="180" id="chartTimeline" width="900"></canvas>
+</div>
+</div>
+<div class="detailBottom">
+<h3>Top misses (by assistant confidence)</h3>
+<div class="missGrid" id="detailMisses"></div>
+</div>
+</div>
+</section>
+</main>
+<footer>
+<div class="foot">
+      Works with exports from <code>citation-clerk-sim</code>. No server, no tracking.
+    </div>
+</footer>
+<script src="dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Citation Clerk Sim — Item Bank Check</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Extra styles for the instructor editor */
+    .wrap{max-width:1100px;margin:0 auto;padding:14px 14px 28px 14px;}
+    .topbar-aux{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-top:10px}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .controls .pill{display:flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;background:var(--pillBg);border:1px solid var(--line);color:var(--muted)}
+    .controls select,.controls input[type="text"],.controls input[type="number"]{
+      border:1px solid var(--line); background:var(--inputBg); border-radius:10px; padding:7px 10px; color:var(--text);
+    }
+    .controls label{font-size:13px;color:var(--muted)}
+    .btnRow{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .banner{
+      margin-top:12px;
+      border:1px solid rgba(180,83,9,0.35);
+      background:rgba(255,237,213,0.55);
+      padding:10px 12px;border-radius:12px;color:#7c2d12;
+      display:none;
+      align-items:center;justify-content:space-between;gap:10px;
+    }
+    html[data-theme="dark"] .banner{
+      background:rgba(120,53,15,0.25);
+      color:#ffd7a3;
+      border-color:rgba(180,83,9,0.35);
+    }
+    .summaryGrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+    .sumCard{border:1px solid var(--line);border-radius:14px;background:var(--panelBg);padding:10px}
+    .sumLabel{font-size:12px;color:var(--muted)}
+    .sumVal{font-size:18px;font-weight:750;margin-top:4px}
+    .list{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+    details.item{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:linear-gradient(180deg,var(--cardGradTop),var(--cardGradBottom));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    details.item summary{
+      list-style:none;
+      cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;gap:10px;
+      padding:12px 12px;
+      border-bottom:1px solid rgba(229,231,235,0.7);
+    }
+    details.item summary::-webkit-details-marker{display:none}
+    .hdrLeft{display:flex;flex-direction:column;gap:4px;min-width:0}
+    .hdrTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .badges{display:flex;gap:6px;flex-wrap:wrap}
+    .badge{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:12px;padding:3px 10px;border-radius:999px;
+      border:1px solid var(--line); background:var(--chip);
+      color:var(--muted);
+    }
+    .badge.good{border-color:rgba(22,163,74,0.40); color:var(--good); background:rgba(34,197,94,0.10)}
+    .badge.bad{border-color:rgba(220,38,38,0.40); color:var(--bad); background:rgba(239,68,68,0.10)}
+    .badge.warn{border-color:rgba(180,83,9,0.40); color:var(--warn); background:rgba(245,158,11,0.12)}
+    .hdrSub{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:720px}
+    .body{padding:12px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .panel{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:var(--panelBg);
+      padding:10px;
+    }
+    .panel h3{margin:0 0 10px 0;font-size:14px}
+    .field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+    .field .k{font-size:12px;color:var(--muted)}
+    .field input[type="text"], .field input[type="number"], .field textarea, .field select{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:var(--inputBg);
+      color:var(--text);
+      padding:8px 10px;
+      font-size:13px;
+      line-height:1.35;
+    }
+    .field textarea{min-height:70px;resize:vertical}
+    .row{display:flex;gap:10px;align-items:center}
+    .row > *{flex:1}
+    .small{font-size:12px;color:var(--muted)}
+    .footerRow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+    .muted{color:var(--muted)}
+    .stickyTop{
+      position:sticky;top:0;z-index:20;
+      background:var(--topbarBg);backdrop-filter: blur(8px);
+      border-bottom:1px solid var(--line);
+    }
+    .stickyInner{max-width:1100px;margin:0 auto;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+    .stickyInner .left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .stickyInner .right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .linklike{color:var(--accent);text-decoration:none}
+    .linklike:hover{text-decoration:underline}
+    @media (max-width: 980px){
+      .summaryGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .grid2{grid-template-columns:1fr}
+      .hdrSub{max-width:420px}
+    }
+  </style>
+</head>
+<body>
+  <div class="stickyTop">
+    <div class="stickyInner">
+      <div class="left">
+        <strong>Citation Clerk Sim — Item Bank Check</strong>
+        <span class="muted">Edit items and export a new <span class="mono">items.json</span></span>
+        <a class="linklike" href="index.html">Back to sim</a>
+      </div>
+      <div class="right">
+        <button id="btnTheme" class="pill pill-button" type="button">Dark mode</button>
+        <label class="pill">
+          <input id="fileInput" type="file" accept="application/json" style="display:none" />
+          <span>Import JSON</span>
+        </label>
+        <button id="btnExport" class="pill pill-button" type="button">Export items.json</button>
+        <button id="btnReset" class="pill pill-button" type="button">Reset to loaded</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div id="draftBanner" class="banner">
+      <div>
+        <strong>Draft found</strong>
+        <span class="small">This browser has an unsaved edits draft from a previous session.</span>
+      </div>
+      <div class="btnRow">
+        <button id="btnRestore" class="pill pill-button" type="button">Restore draft</button>
+        <button id="btnDismiss" class="pill pill-button" type="button">Dismiss</button>
+      </div>
+    </div>
+
+    <div class="topbar-aux">
+      <div class="controls">
+        <span class="pill"><label for="phaseSel">Phase</label><select id="phaseSel">
+          <option value="all">All</option>
+          <option value="1">Phase 1</option>
+          <option value="2">Phase 2</option>
+          <option value="3">Phase 3</option>
+        </select></span>
+
+        <span class="pill"><label for="viewSel">View</label><select id="viewSel">
+          <option value="all">All items</option>
+          <option value="mismatch">Expectation mismatches</option>
+          <option value="assistant_wrong">Assistant wrong</option>
+          <option value="assistant_correct">Assistant correct</option>
+        </select></span>
+
+        <span class="pill"><label for="errSel">Error type</label><select id="errSel">
+          <option value="all">All</option>
+        </select></span>
+
+        <span class="pill"><label for="searchBox">Search</label>
+          <input id="searchBox" type="text" placeholder="ID, citation, proposition, excerpt…" />
+        </span>
+      </div>
+
+      <div class="btnRow">
+        <button id="btnCollapse" class="pill pill-button" type="button">Collapse all</button>
+        <button id="btnExpandMismatch" class="pill pill-button" type="button">Open mismatches</button>
+        <span class="small muted" id="statusText">Loading…</span>
+      </div>
+    </div>
+
+    <div class="summaryGrid">
+      <div class="sumCard"><div class="sumLabel">Items</div><div id="sumItems" class="sumVal">—</div></div>
+      <div class="sumCard"><div class="sumLabel">Phase 1 / 2 / 3</div><div id="sumPhases" class="sumVal">—</div></div>
+      <div class="sumCard"><div class="sumLabel">Assistant wrong</div><div id="sumWrong" class="sumVal">—</div></div>
+      <div class="sumCard"><div class="sumLabel">Expectation mismatches</div><div id="sumMismatch" class="sumVal">—</div></div>
+      <div class="sumCard"><div class="sumLabel">ID/phase mismatches</div><div id="sumIdPhase" class="sumVal">—</div></div>
+    </div>
+
+    <div class="small" style="margin-top:10px;">
+      <strong>Expectation rule:</strong> Phase 1–2 items should have a correct assistant recommendation. In Phase 3, items with an <span class="mono">error_type</span> should be wrong in that way; Phase 3 items without an error type should be correct.
+    </div>
+
+    <div id="list" class="list"></div>
+
+    <div class="footerRow">
+      <div class="small muted">
+        Tip: edits are auto-saved to this browser as a draft until you export.
+      </div>
+      <div class="btnRow">
+        <button id="btnClearDraft" class="pill pill-button" type="button">Clear draft</button>
+        <button id="btnExport2" class="pill pill-button" type="button">Export items.json</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="check.js"></script>
+</body>
+</html>

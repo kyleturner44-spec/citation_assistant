@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Citation Tool Test</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">
+          <img class="logo logo-light" src="lit-lab-torch.png" alt="" aria-hidden="true" />
+          <img class="logo logo-dark" src="lit-lab-torch-inverted.png" alt="" aria-hidden="true" />
+          <div class="brand-text">
+            <div class="brand-title">Citation Review Simulation</div>
+            <div class="brand-subtitle"></div>
+          </div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="pill" id="countdownPill">Judge review in: <span id="countdown">20:00</span></div>
+        <div class="pill" id="progressPill">Reviewed: <span id="reviewedCount">0</span>/<span id="totalCount">0</span></div>
+        <button id="themeToggle" class="pill pill-button" type="button" aria-label="Toggle dark mode">Dark mode</button>
+      </div>
+    </header>
+
+    <!-- Short start animation -->
+    <div id="rivalFinder" class="overlay" style="display:none;" aria-hidden="true">
+      <div class="overlay-card" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <div class="overlay-text">
+          <div class="overlay-title">Finding your rival clerk…</div>
+          <div class="overlay-sub">Matching pace and workload.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Intro -->
+    <section id="screenIntro" class="screen">
+      <div class="card">
+        <h1>Citation Tool Test</h1>
+        <p>
+          You're a court clerk reviewing a brief for citation integrity. You'll also be asked after this experience to help evaluate this tool. You'll be working with wholly and lightly fictionalized primary texts. So, your goal is not to know more about "the law" than the system but to assess the citations on their own terms (i.e., does the cite support the proposition made in the brief given the provided authority?)
+        </p>
+        <ul>
+          <li>You may rely on the assistant's flag, open its summary, or read excerpts.</li>
+          <li>Speed matters — you’re “competing” against other clerks and will be paired with a pacing buddy to keep you on task.</li>
+        </ul>
+
+        <div class="callout" style="margin:12px 0 14px 0;">
+          <div class="callout-title">Scoring goal (revealed at the end)</div>
+          <p>
+            Your goal is to <strong>maximize your Chambers Score</strong>, which is based on how quickly and accurately you clear citations.
+            You will <strong>not</strong> see your score during the sprint; it is finalized after your decisions are checked.
+          </p>
+          <ul>
+            <li><strong>Judge Time</strong> = total time you spend deciding + penalties for mistakes.</li>
+            <li>Each <strong>incorrect</strong> decision adds a time penalty (first 2 errors: <strong>+15s</strong> each; additional errors: <strong>+30s</strong> each).</li>
+            <li>Each <strong>high-confidence miss</strong> (assistant ≥ 90% confident and you were incorrect) adds an additional <strong>+10s</strong>.</li>
+            <li><strong>Chambers Score</strong> is a higher-is-better conversion of Judge Time.</li>
+          </ul>
+        </div>
+
+        <div class="grid2">
+          <div>
+            <label for="alias">Optional alias (for exporting results)</label>
+            <input id="alias" type="text" placeholder="e.g., student23" maxlength="40" />
+          </div>
+          <div>
+            <label>Session length</label>
+            <input type="text" value="20 minutes (fixed)" disabled />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="btnStart" class="primary">Start</button>
+          <button id="btnResume" class="ghost" style="display:none;">Resume session</button>
+          <button id="btnReset" class="danger ghost" style="display:none;">Restart session</button>
+        </div>
+</div>
+    </section>
+
+    <!-- Main -->
+    <section id="screenMain" class="screen" style="display:none;">
+      <div class="layout">
+        <main class="maincol">
+          <div class="card brief">
+            <div class="kicker">Current citation check</div>
+
+            <div class="field">
+              <div class="label">The brief contained the following:</div>
+              <div class="value quote" id="pinpointQuote">—</div>
+            </div>
+
+            <div class="field">
+              <div class="label">Proposition</div>
+              <div class="value" id="propText"></div>
+            </div>
+
+            <div class="field">
+              <div class="label">Citation</div>
+              <div class="value mono" id="citeText"></div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="assistant">
+              <div class="assistant-header">
+                <div class="assistant-title">Assistant</div>
+                <div class="flagline">
+                  <span class="flag" id="assistFlag">—</span>
+                  <span class="conf">Confidence: <span id="assistConf">—</span></span>
+                </div>
+              </div>
+
+              <div class="confbar">
+                <div class="confbar-fill" id="confFill" style="width:0%"></div>
+              </div>
+
+              <div class="assist-actions">
+                <button class="chip" id="btnToggleSummary">Summary</button>
+                <button class="chip" id="btnToggleMeta">Authority details</button>
+<button class="chip" id="btnToggleFull">Full excerpt</button>
+              </div>
+
+              <div class="assist-panel" id="panelSummary" style="display:none;">
+                <div class="panel-title">Automated summary</div>
+                <div class="panel-body" id="assistSummary"></div>
+              </div>
+
+              <div class="assist-panel" id="panelMeta" style="display:none;">
+                <div class="panel-title">Authority details</div>
+                <div class="panel-body" id="assistMeta"></div>
+              </div>
+
+
+              <div class="assist-panel" id="panelFull" style="display:none;">
+                <div class="panel-title">Full excerpt</div>
+                <div class="panel-meta" id="assistFullMeta"></div>
+                <div class="panel-body quote" id="assistFull"></div>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="decision">
+              <button id="btnAllow" class="primary">Allow citation</button>
+              <button id="btnReject" class="danger">Reject citation</button>
+              <button id="btnSkip" class="ghost">Skip (counts as “allow”)</button>
+            </div>
+
+            <div class="hint" id="phaseHint"></div>
+          </div>
+        </main>
+
+        <aside class="sidecol">
+          <div class="card rival">
+            <div class="kicker">Rival clerk</div>
+            <div class="rival-row">
+              <div>Rival reviewed</div>
+              <div><strong><span id="rivalReviewed">0</span></strong></div>
+            </div>
+            <div class="rival-row">
+              <div>You reviewed</div>
+              <div><strong><span id="youReviewed">0</span></strong></div>
+            </div>
+
+            <div class="rival-gap" id="gapText">—</div>
+            <div class="rivalbar">
+              <div class="rivalbar-you" id="rivalBarYou" style="width:0%"></div>
+              <div class="rivalbar-them" id="rivalBarThem" style="width:0%"></div>
+            </div>
+
+            <div class="small">
+              Tip: You can dig deeper using the buttons, but it takes time.
+            </div>
+          </div>
+
+          <div class="card mini">
+            <div class="kicker">What’s being measured</div>
+            <ul class="small">
+              <li>Speed & accuracy</li>
+                            <li>Whether you override the assistant</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="screenResults" class="screen" style="display:none;">
+      <div class="card">
+        <h1>Results</h1>
+
+        <p>Please take a moment to download your results (the JSON file) then <a href="https://docs.google.com/forms/d/e/1FAIpQLSd1lWlSGGopRMofE4WRP9wFZ30F78fNVnXHHXlKOBmYOLT_VQ/viewform?usp=header" target="_blank">upload them here</a>.</p>
+        <div class="actions">
+          <button id="btnDownload" class="primary">Download results (JSON)</button>
+          <button id="btnCopy" class="ghost">Copy results to clipboard</button>
+          <button id="btnRestart" class="danger ghost">Start over</button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div id="scoreSummary" class="callout" style="margin:10px 0 14px 0;"></div>
+
+        <div class="grid3">
+          <div class="stat">
+            <div class="stat-label">Your accuracy</div>
+            <div class="stat-value" id="statAccuracy">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Avg time / item</div>
+            <div class="stat-value" id="statAvgTime">—</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Flag-only decisions</div>
+            <div class="stat-value" id="statFlagOnly">—</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Assessment</h2>
+        <div id="biasAssessment" class="callout"></div>
+        <div id="biasNarrative" class="small" style="margin-top:10px;"></div>
+
+        <h2>By phase</h2>
+        <div id="phaseTable"></div>
+
+        <div id="phaseShifts" class="small" style="margin-top:10px;"></div>
+
+        <div class="divider"></div>
+
+        <h2>Replay: a few misses</h2>
+        <div id="replayList"></div>
+
+        <div class="divider"></div>
+
+        <h2>Learn more</h2>
+        <ul class="refs" id="learnMore">
+          <li><a href="https://cset.georgetown.edu/publication/ai-safety-and-automation-bias/" target="_blank">AI Safety and Automation Bias: The Downside of Human-in-the-Loop</a>  "Automation bias is a critical issue for artificial intelligence deployment. It can cause otherwise knowledgeable users to make crucial and even obvious errors. Organizational, technical, and educational leaders can mitigate these biases through training, design, and processes. This paper explores automation bias and ways to mitigate it through three case studies: Tesla’s autopilot incidents, aviation incidents at Boeing and Airbus, and Army and Navy air defense incidents."</li>
+          <li><a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3240751/" target="_blank" rel="noopener">Automation bias: a systematic review of frequency, effect mediators, and mitigators</a> "Automation bias (AB)—the tendency to over-rely on automation—has been studied in various academic fields. Clinical decision support systems (CDSS) aim to benefit the clinical decision-making process. Although most research shows overall improved performance with use, there is often a failure to recognize the new errors that CDSS can introduce. With a focus on healthcare, a systematic review of the literature from a variety of research fields has been carried out, assessing the frequency and severity of AB, the effect mediators, and interventions potentially mitigating this effect. This is discussed alongside automation-induced complacency, or insufficient monitoring of automation output. A mix of subject specific and freetext terms around the themes of automation, human–automation interaction, and task performance and error were used to search article databases"</li>
+          <li><a href="https://www.oneusefulthing.org/p/centaurs-and-cyborgs-on-the-jagged" target="_blank" rel="noopener">Centaurs and Cyborgs on the Jagged Frontier</a> "... AI is weird. No one actually knows the full range of capabilities of the most advanced Large Language Models, like GPT-4. No one really knows the best ways to use them, or the conditions under which they fail. There is no instruction manual. On some tasks AI is immensely powerful, and on others it fails completely or subtly. And, unless you use AI a lot, you won’t know which is which..."</li>
+          <li><a href="https://pubmed.ncbi.nlm.nih.gov/25401381/" target="_blank" rel="noopener">Algorithm aversion: people erroneously avoid algorithms after seeing them err </a> "Research shows that evidence-based algorithms more accurately predict the future than do human forecasters. Yet when forecasters are deciding whether to use a human forecaster or a statistical algorithm, they often choose the human forecaster. This phenomenon, which we call algorithm aversion, is costly, and it is important to understand its causes. We show that people are especially averse to algorithmic forecasters after seeing them perform, even when they see them outperform a human forecaster. This is because people more quickly lose confidence in algorithmic than human forecasters after seeing them make the same mistake. In 5 studies, participants either saw an algorithm make forecasts, a human make forecasts, both, or neither. They then decided whether to tie their incentives to the future predictions of the algorithm or the human. Participants who saw the algorithm perform were less confident in it, and less likely to choose it over an inferior human forecaster. This was true even among those who saw the algorithm outperform the human."</li>
+        </ul>
+        <h2>Note on this tool's creation</h2>
+        <p>
+          This tool was created with the assistance of OpenAI's GPT 5.2. Prompting was used to create 20 successivly better versions, the last of which was edited manually. The case law, briefs, citations, and assistant outputs are all wholly or lightly fictionalized, a task that was only possible thanks to the GPT. If you're interested in learning more, it's author <a href="https://bsky.app/profile/davidcolarusso.com" target="_blank">David Colarusso</a> is happy to chat. 
+        </p>
+
+</div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+
+  <footer class="site-footer">This tool makes use of fictional case law and is intended for educational purposes only.</footer>
+</body>
+</html>
