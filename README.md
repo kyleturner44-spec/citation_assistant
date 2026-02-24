@@ -1,4 +1,8 @@
-# Citation Tool Test (offline web app)
+# Citation Tool Test (local web app)
+
+You can learn more about why this exists here: [Algos, bias, due process, & you](https://suffolklitlab.org/algos-bias-due-process-you/). 
+
+If you want to play around, here's a [live version](https://www.davidcolarusso.com/42/citation_assistant/), and of course, you can download, edit, and run this locally. 
 
 ## What this is
 A single-page, client-only web simulation designed to teach *automation bias / automation misuse* in a legal citation-checking context.
